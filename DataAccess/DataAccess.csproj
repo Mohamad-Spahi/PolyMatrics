@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{C4AA5D8C-D08B-4B4B-A0AF-456F04BFCEF1}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DataAccess</RootNamespace>
+    <AssemblyName>DataAccess</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ExCSS, Version=4.3.2.0, Culture=neutral, PublicKeyToken=bdbe16be9b936b9a, processorArchitecture=MSIL">
+      <HintPath>..\packages\ExCSS.4.3.2\lib\netstandard2.0\ExCSS.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.6.1\lib\net462\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="clsDataAccessSettings.cs" />
+    <Compile Include="Materials\clsMaterialCategoryData.cs" />
+    <Compile Include="Property\clsPropertyData.cs" />
+    <Compile Include="FoamGrades\clsFoamCategoryData.cs" />
+    <Compile Include="FoamGrades\clsFoamGradeData.cs" />
+    <Compile Include="FoamGrades\clsFoamGradeSPECSData.cs" />
+    <Compile Include="Machines\clsMachineData.cs" />
+    <Compile Include="Machines\clsMachinePropertyData.cs" />
+    <Compile Include="Materials\clsMaterialData.cs" />
+    <Compile Include="Materials\COA\clsBatchesData.cs" />
+    <Compile Include="Materials\COA\clsCOAResultData.cs" />
+    <Compile Include="Materials\TDS\clsTDSMasterData.cs" />
+    <Compile Include="Materials\TDS\clsTestMethodData.cs" />
+    <Compile Include="Mixture_Master\clsMixingStagesData.cs" />
+    <Compile Include="Mixture_Master\clsMixtureActualPropertyData.cs" />
+    <Compile Include="Mixture_Master\clsMixtureMasterData.cs" />
+    <Compile Include="Mixture_Master\clsOperationalContextData.cs" />
+    <Compile Include="Mixture_Master\clsStageMaterialsPPHPData.cs" />
+    <Compile Include="Molds\clsMoldPropertyData.cs" />
+    <Compile Include="Molds\clsMoldsData.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
