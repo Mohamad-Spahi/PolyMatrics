@@ -1,47 +1,60 @@
 ﻿using ClassLibBusiness;
 using PolyMatrics.Global;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyMatrics.Materials
 {
     public partial class frmMaterialInfoCard : Form
-    {   
-        public frmMaterialInfoCard(int MaterialID)
+    {
+        public frmMaterialInfoCard(int materialID)
         {
             InitializeComponent();
 
-            if (!clsValidation.IsMaterialIDValid(MaterialID))
+            if (!clsValidation.IsMaterialIDValid(materialID))
             {
-                MessageBox.Show("Invalid MaterialID Please choose another one.", "Unknow Material ID In The System", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
+                ShowErrorAndClose("Invalid Material ID. Please choose another one.", "Unknown Material ID");
+                return;
             }
 
-            if(ctrlMaterialInfoCard1.LoadInfo(MaterialID))
-            ctrlMaterialCategoryCardInfo1.LoadInfo(ctrlMaterialInfoCard1.SelectedMaterialInfo.MaterialCategoryID);
-
+            LoadMaterialAndCategoryInfo(ctrlMaterialInfoCard1.LoadInfo(materialID));
         }
-        public frmMaterialInfoCard(string ChemicalName)
+
+        public frmMaterialInfoCard(string chemicalName)
         {
             InitializeComponent();
 
-            if (!clsValidation.IsValidChemicalName(ChemicalName))
+            if (!clsValidation.IsValidChemicalName(chemicalName))
             {
-                MessageBox.Show("Invalid Chemical Name Please choose another one.", "Unknow Chemical Name In The System", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
+                ShowErrorAndClose("Invalid Chemical Name. Please choose another one.", "Unknown Chemical Name");
+                return;
             }
 
-            if(ctrlMaterialInfoCard1.LoadInfo(ChemicalName))
-            ctrlMaterialCategoryCardInfo1.LoadInfo(ctrlMaterialInfoCard1.SelectedMaterialInfo.MaterialCategoryID);
-
+            LoadMaterialAndCategoryInfo(ctrlMaterialInfoCard1.LoadInfo(chemicalName));
         }
+
+        /// <summary>
+        /// Helper method to display an error message and safely close the form.
+        /// </summary>
+        private void ShowErrorAndClose(string message, string title)
+        {
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            // Ensures the form closes properly without fully rendering or crashing
+            this.Load += (s, e) => this.Close();
+        }
+
+        /// <summary>
+        /// Loads the category info based on the loaded material details.
+        /// </summary>
+        private void LoadMaterialAndCategoryInfo(bool isMaterialLoadedSuccessfully)
+        {
+            if (isMaterialLoadedSuccessfully && ctrlMaterialInfoCard1.SelectedMaterialInfo != null)
+            {
+                ctrlMaterialCategoryCardInfo1.LoadInfo(ctrlMaterialInfoCard1.SelectedMaterialInfo.MaterialCategoryID);
+            }
+        }
+
         private void btnClose_Click(object sender, EventArgs e)
         {
             this.Close();

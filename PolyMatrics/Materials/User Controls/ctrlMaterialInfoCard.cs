@@ -1,90 +1,90 @@
 ﻿using ClassLibBusiness;
 using PolyMatrics.Global;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyMatrics.Materials.User_Controls
 {
     public partial class ctrlMaterialInfoCard : UserControl
     {
-        private int? _MaterialID {  get; set; }
+        private int? _materialID;
+        private clsMaterial _materialInfo;
 
-        private clsMaterial _MaterialInfo;
+        public int? MaterialID => _materialID;
+        public clsMaterial SelectedMaterialInfo => _materialInfo;
 
-        public int? MaterialID { get {  return _MaterialID; }  }
-
-        public clsMaterial SelectedMaterialInfo { get { return _MaterialInfo; } }
         public ctrlMaterialInfoCard()
         {
             InitializeComponent();
         }
 
-        public bool LoadInfo(string ChemicalName)
+        public bool LoadInfo(string chemicalName)
         {
             _ResetValues();
-            if(!clsValidation.IsValidChemicalName(ChemicalName))
+
+            if (!clsValidation.IsValidChemicalName(chemicalName))
             {
-                lnkEditMaterialInfo.Enabled = false;
-                MessageBox.Show("Invalid Chemical Name, please choose another one.", "Unknown Chemical Name in the System.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError("Invalid Chemical Name, please choose another one.", "Unknown Chemical Name");
                 return false;
             }
-            _MaterialInfo = clsMaterial.Find(ChemicalName);
-            
-            if (_MaterialInfo == null)
+
+            _materialInfo = clsMaterial.Find(chemicalName);
+            return ProcessMaterialLoading(_materialInfo);
+        }
+
+        public bool LoadInfo(int materialID)
+        {
+            _ResetValues();
+
+            if (!clsValidation.IsMaterialIDValid(materialID))
             {
-                lnkEditMaterialInfo.Enabled = false;
-                MessageBox.Show("Soething went wrong, Please retry later.", "Unknown Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError("Invalid Material ID, please choose another one.", "Unknown Material ID");
                 return false;
             }
-            
-            _MaterialID= _MaterialInfo.MaterialID;
+
+            _materialInfo = clsMaterial.Find(materialID);
+            return ProcessMaterialLoading(_materialInfo);
+        }
+
+        private bool ProcessMaterialLoading(clsMaterial material)
+        {
+            if (material == null)
+            {
+                ShowError("Something went wrong, please try again later.", "Unknown Error");
+                return false;
+            }
+
+            _materialInfo = material;
+            _materialID = material.MaterialID;
             FillMaterialInfo();
             return true;
         }
-        public bool LoadInfo(int MaterialID)
+
+        private void ShowError(string message, string title)
         {
-            _ResetValues();
-           
-            if (!clsValidation.IsMaterialIDValid(MaterialID))
-            {
-                lnkEditMaterialInfo.Enabled = false;
-                MessageBox.Show("Invalid Material ID, please choose another one.", "Unknown Material ID in the System.", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
-            }
-            _MaterialInfo = clsMaterial.Find(MaterialID);
-            if (_MaterialInfo == null)
-            {
-                lnkEditMaterialInfo.Enabled = false;
-                MessageBox.Show("Soething went wrong, Please retry later.", "Unknown Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
-            }
-                FillMaterialInfo();
-            return true;
+            lnkEditMaterialInfo.Enabled = false;
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+
         private void FillMaterialInfo()
         {
-            _MaterialID=_MaterialInfo.MaterialID;
-            lblMaterialID.Text = _MaterialID.ToString();
-            lblMaterialCategory.Text = _MaterialInfo.MaterialCategoryInfo.MaterialCategoryName;
-            lblTradeMaterialName.Text=_MaterialInfo.TradeMaterialName;
-            lblChemicalName.Text=_MaterialInfo.ChemicalName;
+            if (_materialInfo == null) return;
 
-            chkIsActive.Checked=_MaterialInfo.IsActive;
+            _materialID = _materialInfo.MaterialID;
+            lblMaterialID.Text = _materialID?.ToString() ?? "[????]";
+            lblMaterialCategory.Text = _materialInfo.MaterialCategoryInfo?.MaterialCategoryName ?? "[????]";
+            lblTradeMaterialName.Text = _materialInfo.TradeMaterialName;
+            lblChemicalName.Text = _materialInfo.ChemicalName;
+            chkIsActive.Checked = _materialInfo.IsActive;
 
             lnkEditMaterialInfo.Enabled = true;
         }
+
         private void _ResetValues()
         {
-            _MaterialID = null;
-            _MaterialInfo= null;
-            
+            _materialID = null;
+            _materialInfo = null;
+
             lblMaterialID.Text = "[????]";
             lblMaterialCategory.Text = "[????]";
             lblTradeMaterialName.Text = "Material Name...";
@@ -93,10 +93,18 @@ namespace PolyMatrics.Materials.User_Controls
 
             lnkEditMaterialInfo.Enabled = false;
         }
+
         private void lnkEditMaterialInfo_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            frmAddUpdateMaterial frm=new frmAddUpdateMaterial(_MaterialID.Value);
-            frm.ShowDialog();
+            if (!_materialID.HasValue) return;
+
+            using (var frm = new frmAddUpdateMaterial(_materialID.Value))
+            {
+                frm.ShowDialog();
+            }
+
+            // Optional: Reload the info after editing to reflect changes immediately
+            LoadInfo(_materialID.Value);
         }
     }
 }

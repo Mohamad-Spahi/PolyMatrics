@@ -1,187 +1,188 @@
 ﻿using ClassLibBusiness;
 using PolyMatrics.Machines.MaterialCategories;
-using PolyMatrics.Materials.User_Controls;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+
 
 namespace PolyMatrics.Materials.MaterialCategories.UserControls
 {
     public partial class ctrlMaterialCategoryInfoWithFilter : UserControl
     {
-        
+        // Event raised when a material category is selected
         public event Action<int> OnMaterialCategorySelected;
-        
-        protected virtual void MaterialSelected(int MaterialCategoryID)
-        {
 
-            Action<int> handler = OnMaterialCategorySelected;
-            if (handler != null)
-            {
-                handler(MaterialCategoryID); // Raise the event with the parameter
-            }
+        protected virtual void RaiseOnMaterialCategorySelected(int materialCategoryID)
+        {
+            OnMaterialCategorySelected?.Invoke(materialCategoryID);
         }
 
-        private bool _ShowAddMaterialCategory {  get; set; }
-
-        public bool ShowAddMaterial
+        private bool _showAddMaterialCategory;
+        public bool ShowAddMaterialCategory
         {
-            get { return _ShowAddMaterialCategory; }
-
+            get => _showAddMaterialCategory;
             set
             {
-                _ShowAddMaterialCategory= value;
-                btnAddNewCategory.Visible = _ShowAddMaterialCategory;
+                _showAddMaterialCategory = value;
+                btnAddNewCategory.Visible = _showAddMaterialCategory;
             }
         }
-        public void FilterFocus()
-        {
-            txtFilterValue.Focus();
-        }
 
-        private bool _FilterEnabled { get; set; }
-
+        private bool _filterEnabled = true;
         public bool FilterEnabled
         {
-            get { return _FilterEnabled; }
-
+            get => _filterEnabled;
             set
             {
-                _FilterEnabled = value;
-                gbMaterialCategoryFilter.Enabled = _FilterEnabled;
+                _filterEnabled = value;
+                gbMaterialCategoryFilter.Enabled = _filterEnabled;
             }
         }
 
-        private int _MaterialCategoryID {  get; set; }
+        public int MaterialCategoryID => ctrlMaterialCategoryCardInfo1.SelectedMaterialCategoryID ?? -1;
 
-        public int MaterialCategoryID { get { return  _MaterialCategoryID; }  }
-
-        public clsMaterialCategory MaterialCategoryInfo { get { return ctrlMaterialCategoryCardInfo1.SelectedMaterialCategory; } }
+        public clsMaterialCategory MaterialCategoryInfo => ctrlMaterialCategoryCardInfo1.SelectedMaterialCategory;
 
         public ctrlMaterialCategoryInfoWithFilter()
         {
             InitializeComponent();
         }
-        public void LoadInfo(int MaterialCategoryID)
-        {
-            
-            FilterEnabled = false;
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Category ID");
-            txtFilterValue.Text=MaterialCategoryID.ToString();
-            ctrlMaterialCategoryCardInfo1.LoadInfo(MaterialCategoryID);
 
-        }
-        public void LoadInfo(string MaterialCategoryName)
-        {
-
-            FilterEnabled = false;
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Category Name");
-            txtFilterValue.Text = MaterialCategoryName.ToString();
-            ctrlMaterialCategoryCardInfo1.LoadInfo(MaterialCategoryName);
-
-        }
         private void ctrlMaterialCategoryInfoWithFilter_Load(object sender, EventArgs e)
         {
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Category ID");
+            SetDefaultFilterSelection();
             txtFilterValue.Focus();
+        }
+
+        private void SetDefaultFilterSelection()
+        {
+            int index = cbFilterBy.FindStringExact("Category ID");
+            if (index != -1) cbFilterBy.SelectedIndex = index;
+        }
+
+        public void FilterFocus()
+        {
+            txtFilterValue.Focus();
+        }
+
+        public void LoadInfo(int materialCategoryID)
+        {
+            FilterEnabled = false;
+            SetDefaultFilterSelection();
+            txtFilterValue.Text = materialCategoryID.ToString();
+            ctrlMaterialCategoryCardInfo1.LoadInfo(materialCategoryID);
+        }
+
+        public void LoadInfo(string materialCategoryName)
+        {
+            FilterEnabled = false;
+            int index = cbFilterBy.FindStringExact("Category Name");
+            if (index != -1) cbFilterBy.SelectedIndex = index;
+            
+            txtFilterValue.Text = materialCategoryName;
+            ctrlMaterialCategoryCardInfo1.LoadInfo(materialCategoryName);
         }
 
         private void txtFilterValue_Validating(object sender, CancelEventArgs e)
         {
-            if (string.IsNullOrEmpty(txtFilterValue.Text.Trim()))
+            if (string.IsNullOrWhiteSpace(txtFilterValue.Text))
             {
                 e.Cancel = true;
                 errorProvider1.SetError(txtFilterValue, "This field is required!");
             }
             else
             {
-                //e.Cancel = false;
                 errorProvider1.SetError(txtFilterValue, null);
             }
         }
 
         private void txtFilterValue_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Check if the pressed key is Enter (character code 13)
-            if (e.KeyChar == (char)13)
+            // Enter key triggers search
+            if (e.KeyChar == (char)Keys.Enter)
             {
-
+                e.Handled = true;
                 btnFind.PerformClick();
             }
 
-            //this will allow only digits if Category id is selected
+            // Allow only digits if Category ID filter is selected
             if (cbFilterBy.Text == "Category ID")
+            {
                 e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
+            }
         }
 
         private void cbFilterBy_SelectedIndexChanged(object sender, EventArgs e)
         {
-            txtFilterValue.Text = "";
+            txtFilterValue.Clear();
             txtFilterValue.Focus();
         }
 
         private void FindNow()
         {
-            switch (cbFilterBy.Text)
+            string filterOption = cbFilterBy.Text;
+            string filterValue = txtFilterValue.Text.Trim();
+            if (filterOption == "Category ID")
             {
-                case "Category ID":
-                    ctrlMaterialCategoryCardInfo1.LoadInfo(int.Parse(txtFilterValue.Text));
-
-                    break;
-
-                case "Category Name":
-                    ctrlMaterialCategoryCardInfo1.LoadInfo(txtFilterValue.Text);
-                    break;
-
-                default:
-                    break;
+                if (int.TryParse(filterValue, out int categoryID))
+                {
+                    ctrlMaterialCategoryCardInfo1.LoadInfo(categoryID);
+                }
+                else
+                {
+                    MessageBox.Show("Please enter a valid numeric Category ID.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            else if (filterOption == "Category Name")
+            {
+                ctrlMaterialCategoryCardInfo1.LoadInfo(filterValue);
             }
 
-            if (OnMaterialCategorySelected != null && FilterEnabled)
-                // Raise the event with a parameter
-                OnMaterialCategorySelected(ctrlMaterialCategoryCardInfo1.SelectedMaterialCategoryID.Value);
+            if (ctrlMaterialCategoryCardInfo1.SelectedMaterialCategoryID.HasValue && FilterEnabled)
+            {
+                RaiseOnMaterialCategorySelected(ctrlMaterialCategoryCardInfo1.SelectedMaterialCategoryID.Value);
+            }
         }
 
         private void btnFind_Click(object sender, EventArgs e)
         {
             if (!this.ValidateChildren())
             {
-                //Here we dont continue becuase the form is not valid
-                MessageBox.Show("Some fileds are not valide!, put the mouse over the red icon(s) to see the erro", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Some fields are not valid! Place the mouse over the red icon(s) to see the error.", 
+                    "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             FindNow();
-
         }
 
-        private void MaterialCategoryIDBacked(int MaterialCategoryID)
+        private void MaterialCategoryIDBacked(int materialCategoryID)
         {
-            //Hanlde recieved MaterialID
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Category ID");
-            txtFilterValue.Text = MaterialCategoryID.ToString();
-            ctrlMaterialCategoryCardInfo1.LoadInfo(MaterialCategoryID);
+            LoadInfo(materialCategoryID);
 
+            if (FilterEnabled && ctrlMaterialCategoryCardInfo1.SelectedMaterialCategoryID.HasValue)
+            {
+                RaiseOnMaterialCategorySelected(materialCategoryID);
+            }
         }
 
         private void btnAddNewCategory_Click(object sender, EventArgs e)
         {
-            frmAddUpdateMaterialCategory frm= new frmAddUpdateMaterialCategory();
-            frm.MaterialCategoryIDBack += MaterialCategoryIDBacked;
-            frm.ShowDialog();
+            using (var frm = new frmAddUpdateMaterialCategory())
+            {
+                frm.MaterialCategoryIDBack += MaterialCategoryIDBacked;
+                frm.ShowDialog();
+            }
         }
 
         public void ResetMaterialCategoryFilter()
         {
             ctrlMaterialCategoryCardInfo1.ResetMaterialCategoryInfo();
-            ctrlMaterialCategoryInfoWithFilter_Load(null, null);
+            SetDefaultFilterSelection();
+            txtFilterValue.Clear();
             FilterEnabled = true;
+            txtFilterValue.Focus();
         }
     }
 }

@@ -1,200 +1,177 @@
 ﻿using ClassLibBusiness;
-using PolyMatrics.Global;
-using PolyMatrics.Machines.MaterialCategories;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyMatrics.Materials.User_Controls
 {
     public partial class ctrlMaterialInfoWithFilter : UserControl
     {
-        //when Material has been Selected, then we raise event to tell other who the selected material
+        // Event raised when a material is selected
         public event Action<int> OnMaterialSelected;
-        
-        // Create a protected method to raise the event with a parameter
-        protected virtual void MaterialSelected(int MaterialID)
+
+        protected virtual void RaiseOnMaterialSelected(int materialID)
         {
-            Action<int> handler = OnMaterialSelected;
-            if (handler != null)
-            {
-                handler(MaterialID); // Raise the event with the parameter
-            }
+            OnMaterialSelected?.Invoke(materialID);
         }
-        //Control Settings: AddButton, FilterEnabled and FilterFocusing
 
-        private bool _ShowAddMaterial {  get; set; }
-
+        private bool _showAddMaterial;
         public bool ShowAddMaterial
         {
-            get { return _ShowAddMaterial; }
-
+            get => _showAddMaterial;
             set
             {
-                _ShowAddMaterial = value;
-                btnAddNewMaterial.Visible= _ShowAddMaterial;
+                _showAddMaterial = value;
+                btnAddNewMaterial.Visible = _showAddMaterial;
             }
         }
+
+        private bool _filterEnabled = true;
+        public bool FilterEnabled
+        {
+            get => _filterEnabled;
+            set
+            {
+                _filterEnabled = value;
+                gbMaterialFilter.Enabled = _filterEnabled;
+            }
+        }
+
+        public int MaterialID => ctrlMaterialInfoCard1.MaterialID ?? -1;
+
+        public clsMaterial MaterialInfo => ctrlMaterialInfoCard1.SelectedMaterialInfo;
+
+        public ctrlMaterialInfoWithFilter()
+        {
+            InitializeComponent();
+        }
+
+        private void ctrlMaterialInfoWithFilter_Load(object sender, EventArgs e)
+        {
+            SetDefaultFilterSelection();
+            txtFilterValue.Focus();
+        }
+
+        private void SetDefaultFilterSelection()
+        {
+            int index = cbFilterBy.FindStringExact("Material ID");
+            if (index != -1) cbFilterBy.SelectedIndex = index;
+        }
+
         public void FilterFocus()
         {
             txtFilterValue.Focus();
         }
 
-        private bool _FilterEnabled {  get; set; }
-
-        public bool FilterEnabled
+        public void LoadInfo(int materialID)
         {
-            get { return _FilterEnabled; }
-
-            set
-            {
-                _FilterEnabled = value;
-                gbMaterialFilter.Enabled= _FilterEnabled;
-            }
-        }
-        //Dealing with Main Varialbles: MaterialID and MaterialInfo object
-
-        private int? _MaterialID {  get; set; }
-        public int MaterialID { get { return _MaterialID.Value; } }
-
-        public clsMaterial MaterialInfo { get { return ctrlMaterialInfoCard1.SelectedMaterialInfo; } }
-
-        public void LoadInfo(int MaterialID)
-        {
-
             FilterEnabled = false;
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Material ID");
-            txtFilterValue.Text = MaterialID.ToString();
-            ctrlMaterialInfoCard1.LoadInfo(MaterialID);
-
+            SetDefaultFilterSelection();
+            txtFilterValue.Text = materialID.ToString();
+            ctrlMaterialInfoCard1.LoadInfo(materialID);
         }
-        public void LoadInfo(string ChemicalName)
-        {
 
+        public void LoadInfo(string chemicalName)
+        {
             FilterEnabled = false;
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Material Name");
-            txtFilterValue.Text = ChemicalName.ToString();
-            ctrlMaterialInfoCard1.LoadInfo(ChemicalName);
+            int index = cbFilterBy.FindStringExact("Chemical Name");
+            if (index != -1) cbFilterBy.SelectedIndex = index;
+            
+            txtFilterValue.Text = chemicalName;
+            ctrlMaterialInfoCard1.LoadInfo(chemicalName);
+        }
 
-        }
-        public ctrlMaterialInfoWithFilter()
-        {
-            InitializeComponent();
-        }
-        private void ctrlMaterialInfoWithFilter_Load(object sender, EventArgs e)
-        {
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Material ID");
-            txtFilterValue.Focus();
-        }
-        
-
-        //Error Validation Settings
-        //Validate value to check the value is not nothing
-        
         private void txtFilterValue_Validating(object sender, CancelEventArgs e)
         {
-            if (string.IsNullOrEmpty(txtFilterValue.Text.Trim()))
+            if (string.IsNullOrWhiteSpace(txtFilterValue.Text))
             {
-                
+                e.Cancel = true;
                 errorProvider1.SetError(txtFilterValue, "This field is required!");
             }
             else
             {
-                //e.Cancel = false;
                 errorProvider1.SetError(txtFilterValue, null);
             }
         }
 
-        //this method responsible for manage type of keys that user entered
-        //for Type Filter if this type just take numbers then 
-        //txtFilterValue TextBox will not take any other type rather than numbers
-
-        //In Addition to the key Press that handle out passing is Enter key(Character code 13)
         private void txtFilterValue_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Check if the pressed key is Enter (character code 13)
-            if (e.KeyChar == (char)13)
+            if (e.KeyChar == (char)Keys.Enter)
             {
-
+                e.Handled = true;
                 btnFind.PerformClick();
             }
 
-            //this will allow only digits if Material id is selected
+            // Allow only digits if Material ID filter is selected
             if (cbFilterBy.Text == "Material ID")
+            {
                 e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
+            }
         }
 
-        //Here we check if value FindBy combo box is changed to reset txtFiltervalue textBox
-        //And reFocus to this textbox
         private void cbFilterBy_SelectedIndexChanged(object sender, EventArgs e)
         {
-            txtFilterValue.Text = "";
+            txtFilterValue.Clear();
             txtFilterValue.Focus();
         }
 
-        //In this Section we deal with methods that handle search 
-        
         private void FindNow()
         {
-            switch (cbFilterBy.Text)
+            string filterOption = cbFilterBy.Text;
+            string filterValue = txtFilterValue.Text.Trim();
+
+            if (filterOption == "Material ID")
             {
-                case "Material ID":
-                    ctrlMaterialInfoCard1.LoadInfo(int.Parse(txtFilterValue.Text));
-
-                    break;
-
-                case "Chemical Name":
-                    ctrlMaterialInfoCard1.LoadInfo(txtFilterValue.Text);
-                    break;
-
-                default:
-                    break;
+                if (int.TryParse(filterValue, out int materialID))
+                {
+                    ctrlMaterialInfoCard1.LoadInfo(materialID);
+                }
+                else
+                {
+                    MessageBox.Show("Please enter a valid numeric Material ID.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            else if (filterOption == "Chemical Name" || filterOption == "Material Name")
+            {
+                ctrlMaterialInfoCard1.LoadInfo(filterValue);
             }
 
-            if (OnMaterialSelected != null && FilterEnabled)
-                // Raise the event with a parameter
-                OnMaterialSelected(ctrlMaterialInfoCard1.MaterialID.Value);
+            if (ctrlMaterialInfoCard1.MaterialID.HasValue && FilterEnabled)
+            {
+                RaiseOnMaterialSelected(ctrlMaterialInfoCard1.MaterialID.Value);
+            }
         }
-        
 
         private void btnFind_Click(object sender, EventArgs e)
         {
             if (!this.ValidateChildren())
             {
-                //Here we dont continue becuase the form is not valid
-                MessageBox.Show("Some fileds are not valide!, put the mouse over the red icon(s) to see the erro", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Some fields are not valid! Place the mouse over the red icon(s) to see the error.", 
+                    "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             FindNow();
         }
 
-        //If User choose new material.So, we must deal with the new materialID 
-        //that created and returned from Add New Material Form that has event called when
-        //Material ID is determined
-
         private void btnAddNewMaterial_Click(object sender, EventArgs e)
         {
-            frmAddUpdateMaterial frm=new frmAddUpdateMaterial();
-            frm.MaterialIDBack += MaterialIDBacked; //subscribe to the event
-            frm.ShowDialog();
-
+            using (var frm = new frmAddUpdateMaterial())
+            {
+                frm.MaterialIDBack += MaterialIDBacked;
+                frm.ShowDialog();
+            }
         }
 
-        private void MaterialIDBacked(int MaterialID)
+        private void MaterialIDBacked(int materialID)
         {
-            //Hanlde recieved MaterialID
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("Material ID");
-            txtFilterValue.Text = MaterialID.ToString();
-            ctrlMaterialInfoCard1.LoadInfo(MaterialID);
-
+            LoadInfo(materialID);
+            
+            if (FilterEnabled && ctrlMaterialInfoCard1.MaterialID.HasValue)
+            {
+                RaiseOnMaterialSelected(materialID);
+            }
         }
-        
     }
 }

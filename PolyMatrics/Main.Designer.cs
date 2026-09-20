@@ -251,7 +251,6 @@
             this.EquipmentsToolStripMenuItem.Name = "EquipmentsToolStripMenuItem";
             this.EquipmentsToolStripMenuItem.Size = new System.Drawing.Size(170, 68);
             this.EquipmentsToolStripMenuItem.Text = "&Equipments";
-            this.EquipmentsToolStripMenuItem.Click += new System.EventHandler(this.EquipmentsToolStripMenuItem_Click);
             // 
             // manageMachinesToolStripMenuItem
             // 
@@ -289,7 +288,6 @@
             this.formulationsToolStripMenuItem.Name = "formulationsToolStripMenuItem";
             this.formulationsToolStripMenuItem.Size = new System.Drawing.Size(177, 68);
             this.formulationsToolStripMenuItem.Text = "&Formulations";
-            this.formulationsToolStripMenuItem.Click += new System.EventHandler(this.formulationsToolStripMenuItem_Click);
             // 
             // manageFormulationsToolStripMenuItem
             // 
@@ -305,7 +303,6 @@
             this.manageFormulationsToolStripMenuItem.Name = "manageFormulationsToolStripMenuItem";
             this.manageFormulationsToolStripMenuItem.Size = new System.Drawing.Size(300, 38);
             this.manageFormulationsToolStripMenuItem.Text = "Manage &Formulations";
-            this.manageFormulationsToolStripMenuItem.Click += new System.EventHandler(this.manageFormulationsToolStripMenuItem_Click);
             // 
             // showCatalogFormulationsToolStripMenuItem
             // 
@@ -361,8 +358,7 @@
             this.showFoamResultsToolStripMenuItem.Name = "showFoamResultsToolStripMenuItem";
             this.showFoamResultsToolStripMenuItem.Size = new System.Drawing.Size(325, 38);
             this.showFoamResultsToolStripMenuItem.Text = "&Show Foam Formulation Results";
-            this.showFoamResultsToolStripMenuItem.Click += new System.EventHandler(this.showFoamResultsToolStripMenuItem_Click);
-            // 
+           // 
             // toolStripMenuItem6
             // 
             this.toolStripMenuItem6.Name = "toolStripMenuItem6";
@@ -445,7 +441,6 @@
             this.showFormulationStagesToolStripMenuItem.Name = "showFormulationStagesToolStripMenuItem";
             this.showFormulationStagesToolStripMenuItem.Size = new System.Drawing.Size(277, 38);
             this.showFormulationStagesToolStripMenuItem.Text = "Show Formulation &Stages";
-            this.showFormulationStagesToolStripMenuItem.Click += new System.EventHandler(this.showFormulationStagesToolStripMenuItem_Click);
             // 
             // toolStripMenuItem7
             // 

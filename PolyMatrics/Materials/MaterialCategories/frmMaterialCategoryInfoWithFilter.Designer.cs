@@ -75,8 +75,7 @@
             this.ctrlMaterialCategoryInfoWithFilter1.Location = new System.Drawing.Point(0, 40);
             this.ctrlMaterialCategoryInfoWithFilter1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.ctrlMaterialCategoryInfoWithFilter1.Name = "ctrlMaterialCategoryInfoWithFilter1";
-            this.ctrlMaterialCategoryInfoWithFilter1.ShowAddMaterial = false;
-            this.ctrlMaterialCategoryInfoWithFilter1.Size = new System.Drawing.Size(694, 250);
+             this.ctrlMaterialCategoryInfoWithFilter1.Size = new System.Drawing.Size(694, 250);
             this.ctrlMaterialCategoryInfoWithFilter1.TabIndex = 44;
             // 
             // frmMaterialCategoryInfoWithFilter

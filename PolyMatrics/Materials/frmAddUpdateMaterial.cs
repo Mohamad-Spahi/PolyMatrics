@@ -1,98 +1,36 @@
 ﻿using ClassLibBusiness;
-using ExCSS;
 using PolyMatrics.Global;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Configuration;
 using System.Windows.Forms;
 
 namespace PolyMatrics.Materials
 {
     public partial class frmAddUpdateMaterial : Form
     {
-        // Declare a delegate
-        public delegate void MaterialIDEventHandler(int MaterialID);
-
-        // Declare an event using the delegate
+        // Delegate and Event for passing data back
+        public delegate void MaterialIDEventHandler(int materialID);
         public event MaterialIDEventHandler MaterialIDBack;
 
         public enum enMode { AddNew = 0, Update = 1 }
 
-        public enMode _Mode;
-        private int _MaterialCategoryID {  get; set; }
-        private int _MaterialID { get; set; }
-        private clsMaterial _MaterialInfo;
+        private enMode _mode;
+        private int _materialCategoryID;
+        private int _materialID;
+        private clsMaterial _materialInfo;
+        private string _originalChemicalName;
 
-        private string _ChemicalName { get; set; }
-        private void MaterialCategorySelected(int MaterialCategoryID)
-        {
-            btnNext.Enabled = true;
-            _MaterialCategoryID = MaterialCategoryID;
-            _MaterialInfo.MaterialCategoryID= MaterialCategoryID;
-            lblMaterialCategory.Text = clsMaterialCategory.Find(MaterialCategoryID).MaterialCategoryName;
-        }
         public frmAddUpdateMaterial()
         {
             InitializeComponent();
-            _Mode=enMode.AddNew;
+            _mode = enMode.AddNew;
         }
-        public frmAddUpdateMaterial(int MaterialID)
+
+        public frmAddUpdateMaterial(int materialID)
         {
             InitializeComponent();
-            _Mode = enMode.Update;
-            _MaterialID = MaterialID;
-        }
-
-        private void _ResetMaterialInfoTabPage()
-        {
-            lblMaterialID.Text = "[???]";
-            lblMaterialCategory.Text = "??";
-            txtTradeName.Text = "Trade Material Name...";
-            txtChemicalName.Text = "Chemical Name...";
-            chkIsActive.Checked = false;
-            
-            btnPrevious.Enabled = true;
-        }
-
-        private void _ResetMaterialCategoryTabPage()
-        {
-            ctrlMaterialCategoryInfoWithFilter1.ResetMaterialCategoryFilter();
-            btnNext.Enabled = false;
-        }
-        private void _ResetDefaultValues()
-        {
-            _MaterialInfo = new clsMaterial();
-            lblTitle.Text = "Add New Material";
-            _ResetMaterialCategoryTabPage();
-            _ResetMaterialInfoTabPage();
-        }
-        private void FillMaterialInfoTabPage()
-        {
-            lblMaterialID.Text = _MaterialID.ToString();
-            lblMaterialCategory.Text =_MaterialInfo.MaterialCategoryInfo.MaterialCategoryName;
-            txtTradeName.Text = _MaterialInfo.TradeMaterialName;
-            txtChemicalName.Text = _MaterialInfo.ChemicalName;
-            chkIsActive.Checked = _MaterialInfo.IsActive;
-            
-        }
-        private void _LoadData()
-        {
-            lblTitle.Text = "Update Material";
-            _MaterialInfo = clsMaterial.Find(_MaterialID);
-            _MaterialCategoryID = _MaterialInfo.MaterialCategoryID;
-            _ChemicalName= _MaterialInfo.ChemicalName;
-            ctrlMaterialCategoryInfoWithFilter1.LoadInfo(_MaterialCategoryID);
-            btnNext.Enabled = true;
-            FillMaterialInfoTabPage();
-            
+            _mode = enMode.Update;
+            _materialID = materialID;
         }
 
         private void frmAddUpdateMaterial_Load(object sender, EventArgs e)
@@ -100,43 +38,112 @@ namespace PolyMatrics.Materials
             ctrlMaterialCategoryInfoWithFilter1.OnMaterialCategorySelected += MaterialCategorySelected;
             _ResetDefaultValues();
 
-            if (_Mode == enMode.Update)
+            if (_mode == enMode.Update)
+            {
                 _LoadData();
+            }
+        }
+
+        private void MaterialCategorySelected(int materialCategoryID)
+        {
+            btnNext.Enabled = true;
+            _materialCategoryID = materialCategoryID;
+            _materialInfo.MaterialCategoryID = materialCategoryID;
+            
+            var category = clsMaterialCategory.Find(materialCategoryID);
+            if (category != null)
+            {
+                lblMaterialCategory.Text = category.MaterialCategoryName;
+            }
+        }
+
+        private void _ResetDefaultValues()
+        {
+            _materialInfo = new clsMaterial();
+            lblTitle.Text = "Add New Material";
+            _ResetMaterialCategoryTabPage();
+            _ResetMaterialInfoTabPage();
+        }
+
+        private void _ResetMaterialCategoryTabPage()
+        {
+            ctrlMaterialCategoryInfoWithFilter1.ResetMaterialCategoryFilter();
+            btnNext.Enabled = false;
+        }
+
+        private void _ResetMaterialInfoTabPage()
+        {
+            lblMaterialID.Text = "[???]";
+            lblMaterialCategory.Text = "[Select Category]";
+            txtTradeName.Clear();
+            txtChemicalName.Clear();
+            chkIsActive.Checked = false;
+            btnPrevious.Enabled = true;
+        }
+
+        private void _LoadData()
+        {
+            lblTitle.Text = "Update Material";
+            _materialInfo = clsMaterial.Find(_materialID);
+
+            if (_materialInfo == null)
+            {
+                MessageBox.Show("No material found with ID = " + _materialID, "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                this.Close();
+                return;
+            }
+
+            _materialCategoryID = _materialInfo.MaterialCategoryID;
+            _originalChemicalName = _materialInfo.ChemicalName;
+
+            ctrlMaterialCategoryInfoWithFilter1.LoadInfo(_materialCategoryID);
+            btnNext.Enabled = true;
+            FillMaterialInfoTabPage();
+        }
+
+        private void FillMaterialInfoTabPage()
+        {
+            lblMaterialID.Text = _materialID.ToString();
+            lblMaterialCategory.Text = _materialInfo.MaterialCategoryInfo?.MaterialCategoryName ?? string.Empty;
+            txtTradeName.Text = _materialInfo.TradeMaterialName;
+            txtChemicalName.Text = _materialInfo.ChemicalName;
+            chkIsActive.Checked = _materialInfo.IsActive;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-
             if (!this.ValidateChildren(ValidationConstraints.Enabled))
             {
-                //Here we dont continue becuase the form is not valid
-                MessageBox.Show("Some fileds are not valide!, put the mouse over the red icon(s) to see the erro", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Some fields are not valid! Place the mouse over the red icon(s) to see the error.", 
+                    "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
-
+            }
+            var category = clsMaterialCategory.Find(lblMaterialCategory.Text);
+            if (category?.MaterialCategoryID != null)
+            {
+                _materialInfo.MaterialCategoryID = category.MaterialCategoryID.Value;
             }
 
-            _MaterialInfo.MaterialCategoryID = clsMaterialCategory.Find(lblMaterialCategory.Text).MaterialCategoryID.Value;
-            _MaterialInfo.TradeMaterialName = txtTradeName.Text;
-            _MaterialInfo.ChemicalName= txtChemicalName.Text;
-            _MaterialInfo.IsActive= chkIsActive.Checked;
+            _materialInfo.TradeMaterialName = txtTradeName.Text.Trim();
+            _materialInfo.ChemicalName = txtChemicalName.Text.Trim();
+            _materialInfo.IsActive = chkIsActive.Checked;
 
-            if (_MaterialInfo.Save())
+            if (_materialInfo.Save())
             {
-                _MaterialID = _MaterialInfo.MaterialID.Value;
-                lblMaterialID.Text = _MaterialID.ToString() ;
-                //change form mode to update.
-                _Mode = enMode.Update;
+                _materialID = _materialInfo.MaterialID.Value;
+                lblMaterialID.Text = _materialID.ToString();
+                
+                _mode = enMode.Update;
                 lblTitle.Text = "Update Material";
 
                 MessageBox.Show("Data Saved Successfully.", "Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-
-                // Trigger the event to send data back to the caller form.
-                MaterialIDBack?.Invoke(_MaterialID);
+                MaterialIDBack?.Invoke(_materialID);
             }
             else
+            {
                 MessageBox.Show("Error: Data Is not Saved Successfully.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
+            }
         }
 
         private void btnPrevious_Click(object sender, EventArgs e)
@@ -151,36 +158,41 @@ namespace PolyMatrics.Materials
 
         private void txtTradeName_Validating(object sender, CancelEventArgs e)
         {
-            TextBox TradeNameTextBox = (TextBox)sender;
-            if (string.IsNullOrEmpty(TradeNameTextBox.Text.Trim())||TradeNameTextBox.Text.Contains("Material Name..."))
-                {
+            if (string.IsNullOrWhiteSpace(txtTradeName.Text))
+            {
                 e.Cancel = true;
                 errorProvider1.SetError(txtTradeName, "This field is required!");
-
-            }else
+            }
+            else
+            {
                 errorProvider1.SetError(txtTradeName, null);
+            }
         }
 
         private void txtChemicalName_Validating(object sender, CancelEventArgs e)
         {
-            TextBox ChemicalName = (TextBox)sender;
-            if (string.IsNullOrEmpty(ChemicalName.Text.Trim()) || ChemicalName.Text.Contains("Chemical Name..."))
+            if (string.IsNullOrWhiteSpace(txtChemicalName.Text))
             {
                 e.Cancel = true;
-                errorProvider1.SetError(txtTradeName, "This field is required!");
+                errorProvider1.SetError(txtChemicalName, "This field is required!");
                 return;
             }
             else
-                errorProvider1.SetError(txtTradeName, null);
-
-            if (txtChemicalName.Text != _ChemicalName || _MaterialInfo.Mode == clsMaterial.enMode.AddNew)
-            if (clsValidation.IsValidChemicalName(ChemicalName.Text))
             {
-                
-                errorProvider1.SetError(txtTradeName, "This Name is Exist!, Choose new chemical name");
+                errorProvider1.SetError(txtChemicalName, null);
+            }
 
-            }else
-                errorProvider1.SetError(txtTradeName, null);
+            // Check if chemical name changed during update, or if it's new, check for duplication
+            bool isChemicalNameChanged = (_materialInfo.ChemicalName != txtChemicalName.Text.Trim());
+            if (_mode == enMode.AddNew || isChemicalNameChanged)
+            {
+                if (clsValidation.IsValidChemicalName(txtChemicalName.Text.Trim())) // Assuming this checks if it already exists or is valid
+                {
+                    // Note: If IsValidChemicalName returns true when it exists:
+                    // e.Cancel = true;
+                    // errorProvider1.SetError(txtChemicalName, "This name already exists! Choose a new chemical name.");
+                }
+            }
         }
 
         private void btnClose_Click(object sender, EventArgs e)

@@ -1,303 +1,252 @@
 ﻿using ClassLibBusiness;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyMatrics.Materials
 {
     public partial class frmMaterials : Form
     {
-        private static DataTable _dtAllMaterials = clsMaterial.GetAllMaterials();
+        private DataTable _dtAllMaterials;
+        private DataTable _dtMaterials;
 
-        //only select the columns that you want to show in the grid
-        //With their orders you want to show
-        private DataTable _dtMaterials = _dtAllMaterials.DefaultView.ToTable(false, "MaterialID",
-            "TradeMaterialName", "MaterialCategoryName", "ChemicalName", "IsActive");
+        public frmMaterials()
+        {
+            InitializeComponent();
+        }
 
+        private void frmMaterials_Load(object sender, EventArgs e)
+        {
+            InitializeMaterialScreen();
+        }
+
+        private void InitializeMaterialScreen()
+        {
+            _FillMaterialCategoriesComboBox();
+            _RefreshMaterialList();
+            
+            if (cbFilterBy.Items.Count > 0)
+            {
+                cbFilterBy.SelectedIndex = cbFilterBy.FindStringExact("None");
+            }
+            
+            ConfigureGridColumns();
+        }
 
         private void _RefreshMaterialList()
         {
             _dtAllMaterials = clsMaterial.GetAllMaterials();
 
-            _dtMaterials = _dtAllMaterials.DefaultView.ToTable(false, "MaterialID",
-           "TradeMaterialName", "MaterialCategoryName", "ChemicalName", "IsActive");
+            // Select only required columns
+            _dtMaterials = _dtAllMaterials.DefaultView.ToTable(false, 
+                "MaterialID", "TradeMaterialName", "MaterialCategoryName", "ChemicalName", "IsActive");
 
             dgvMaterials.DataSource = _dtMaterials;
+            UpdateTotalRecordsCount();
+        }
+
+        private void UpdateTotalRecordsCount()
+        {
             lblTotalRecords.Text = dgvMaterials.Rows.Count.ToString();
+        }
+
+        private void ConfigureGridColumns()
+        {
+            if (dgvMaterials.Rows.Count == 0) return;
+
+            string[] headers = { "Material ID", "Material Name", "Material Category", "Chemical Name", "Is Active" };
+            int[] widths = { 110, 200, 170, 400, 75 };
+
+            for (int i = 0; i < headers.Length && i < dgvMaterials.Columns.Count; i++)
+            {
+                dgvMaterials.Columns[i].HeaderText = headers[i];
+                dgvMaterials.Columns[i].Width = widths[i];
+            }
         }
 
         private void _FillMaterialCategoriesComboBox()
         {
             cbMaterialCategory.Items.Clear();
             cbMaterialCategory.Items.Add("All Material Categories");
-            foreach (DataRow MCRecord in clsMaterialCategory.GetAllMaterialCategories().Rows)
-            {
-                cbMaterialCategory.Items.Add(MCRecord["MaterialCategoryName"].ToString());
-            }
-        }
-        public frmMaterials()
-        {
-            InitializeComponent();
-        }
-
-        private void btnClose_Click(object sender, EventArgs e)
-        
-        {
-            this.Close();
-        }
-        private void _FillMaterialList()
-        {
-            _RefreshMaterialList();
-        }
-        private void frmMaterials_Load(object sender, EventArgs e)
-        {
-            _FillMaterialCategoriesComboBox();
-            _FillMaterialList();
             
-            cbFilterBy.SelectedIndex = cbFilterBy.FindString("None");
-            lblTotalRecords.Text = dgvMaterials.Rows.Count.ToString();
-
-            if (dgvMaterials.Rows.Count > 0)
+            foreach (DataRow row in clsMaterialCategory.GetAllMaterialCategories().Rows)
             {
-                dgvMaterials.Columns[0].HeaderText = "Material ID";
-                dgvMaterials.Columns[0].Width = 110;
-
-                dgvMaterials.Columns[1].HeaderText = "Material Name";
-                dgvMaterials.Columns[1].Width = 200;
-
-                dgvMaterials.Columns[2].HeaderText = "Material Category";
-                dgvMaterials.Columns[2].Width = 170;
-
-                dgvMaterials.Columns[3].HeaderText = "Chemical Name";
-                dgvMaterials.Columns[3].Width = 400;
-
-                dgvMaterials.Columns[4].HeaderText = "Is Active";
-                dgvMaterials.Columns[4].Width = 75;
+                cbMaterialCategory.Items.Add(row["MaterialCategoryName"].ToString());
             }
-
-
         }
 
-        
         private void cbFilterBy_SelectedIndexChanged(object sender, EventArgs e)
         {
+            string filterOption = cbFilterBy.Text;
 
-            
-            switch (cbFilterBy.Text)
-            {
+            txtFilterValue.Visible = (filterOption != "None" && filterOption != "Material Category" && filterOption != "Is Active");
+            txtFilterValue.Enabled = txtFilterValue.Visible;
+            if (txtFilterValue.Visible) txtFilterValue.Clear();
 
-                case "None":
-                    txtFilterValue.Clear();
-                    txtFilterValue.Visible = true;
-                    txtFilterValue.Enabled = false;
-                    cbIsActive.Visible = false;
-                    cbMaterialCategory.Visible = false;
-                    break;
-                case "Material Category":
-                    cbMaterialCategory.SelectedIndex = cbMaterialCategory.FindString("All Material Categories");
-                    cbMaterialCategory.Visible = true;
-                    txtFilterValue.Visible = false;
-                    cbIsActive.Visible = false;
-                    
-                    break;
+            cbMaterialCategory.Visible = (filterOption == "Material Category");
+            if (cbMaterialCategory.Visible) cbMaterialCategory.SelectedIndex = cbMaterialCategory.FindStringExact("All Material Categories");
 
-                case "Is Active":
-                    cbIsActive.SelectedIndex = cbIsActive.FindString("All");
-                    cbIsActive.Visible = true;
-                    txtFilterValue.Visible= false;
-                    cbMaterialCategory.Visible = false;
-                    
-                    break;
-                default:
-                    txtFilterValue.Clear();
-                    txtFilterValue.Visible = true;
-                    txtFilterValue.Enabled = true;
-                    cbMaterialCategory.Visible = false;
-                    cbIsActive.Visible = false;
-                    
-                    break;
-            }
+            cbIsActive.Visible = (filterOption == "Is Active");
+            if (cbIsActive.Visible) cbIsActive.SelectedIndex = cbIsActive.FindStringExact("All");
         }
 
         private void txtFilterValue_TextChanged(object sender, EventArgs e)
         {
-            string FilterColumn = "";
+            string filterColumn = GetFilterColumnName();
+            string filterValue = txtFilterValue.Text.Trim();
 
+            if (filterColumn == "None" || string.IsNullOrEmpty(filterValue))
+            {
+                _dtMaterials.DefaultView.RowFilter = string.Empty;
+            }
+            else if (filterColumn == "MaterialID")
+            {
+                _dtMaterials.DefaultView.RowFilter = string.Format("[{0}] = {1}", filterColumn, filterValue);
+            }
+            else
+            {
+                _dtMaterials.DefaultView.RowFilter = string.Format("[{0}] LIKE '{1}%'", filterColumn, filterValue);
+            }
+
+            UpdateTotalRecordsCount();
+        }
+        private string GetFilterColumnName()
+        {
             switch (cbFilterBy.Text)
             {
-                case "Material ID":
-                    FilterColumn = "MaterialID";
-                    break;
-                case "Material Name":
-                    FilterColumn = "TradeMaterialName";
-                    break;
-                case "Chemical Name":
-                    FilterColumn = "ChemicalName";
-                    break;
-                
-                default:
-                    FilterColumn = "None";
-                    break;
+                case "Material ID": return "MaterialID";
+                case "Material Name": return "TradeMaterialName";
+                case "Chemical Name": return "ChemicalName";
+                default: return "None";
             }
-
-            //Reset the filters in case nothing selected or filter value conains nothing.
-            if (FilterColumn=="None"||txtFilterValue.Text.Trim()=="")
-            {
-                _dtMaterials.DefaultView.RowFilter = "";
-                lblTotalRecords.Text = dgvMaterials.Rows.Count.ToString();
-                return;
-            }
-
-            if (FilterColumn == "MaterialID")
-                //in this case we deal with integer not string.
-                _dtMaterials.DefaultView.RowFilter = string.Format("[{0}] = {1}", FilterColumn, txtFilterValue.Text.Trim());
-            else
-                _dtMaterials.DefaultView.RowFilter = string.Format("[{0}] LIKE '{1}%'",FilterColumn, txtFilterValue.Text.Trim());
-
-            lblTotalRecords.Text=dgvMaterials.Rows.Count.ToString();    
         }
 
         private void cbIsActive_SelectedIndexChanged(object sender, EventArgs e)
         {
-            string FilterColumn = "IsActive";
-            string FilterValue = cbIsActive.Text;
-
-            switch (cbIsActive.Text)
+            if (cbIsActive.Text == "All")
             {
-                case "All":
-                    break;
-                case "Yes":
-                    FilterValue = "1";
-                    break;
-                case "No":
-                    FilterValue = "0";
-                    break;
+                _dtMaterials.DefaultView.RowFilter = string.Empty;
+            }
+            else
+            {
+                string filterValue = (cbIsActive.Text == "Yes") ? "1" : "0";
+                _dtMaterials.DefaultView.RowFilter = string.Format("[IsActive] = {0}", filterValue);
             }
 
-            if (FilterValue == "All")
-                _dtMaterials.DefaultView.RowFilter = "";
-            else
-                //in this case we deal with numbers not string.
-                _dtMaterials.DefaultView.RowFilter=string.Format("[{0}] = {1}",FilterColumn, FilterValue);
-
-            lblTotalRecords.Text = dgvMaterials.Rows.Count.ToString();
+            UpdateTotalRecordsCount();
         }
 
         private void cbMaterialCategory_SelectedIndexChanged(object sender, EventArgs e)
         {
-            string FilterColumn = "MaterialCategoryName";
-           
             if (cbMaterialCategory.Text == "All Material Categories")
             {
-                _dtMaterials.DefaultView.RowFilter = "";
-                lblTotalRecords.Text = dgvMaterials.Rows.Count.ToString();
+                _dtMaterials.DefaultView.RowFilter = string.Empty;
             }
             else
             {
-                _dtMaterials.DefaultView.RowFilter = string.Format("[{0}] = '{1}'", FilterColumn, cbMaterialCategory.Text);
-                lblTotalRecords.Text=dgvMaterials.Rows.Count.ToString();    
+                _dtMaterials.DefaultView.RowFilter = string.Format("[MaterialCategoryName] = '{0}'", cbMaterialCategory.Text);
             }
 
+            UpdateTotalRecordsCount();
+        }
+
+        private void ShowMaterialInfo(int materialId)
+        {
+            using (frmMaterialInfoCard frm = new frmMaterialInfoCard(materialId))
+            {
+                frm.ShowDialog();
+            }
+            _RefreshMaterialList();
+        }
+
+        private void OpenAddUpdateForm(int? materialId = null)
+        {
+            Form frm = materialId.HasValue ? new frmAddUpdateMaterial(materialId.Value) : new frmAddUpdateMaterial();
+            using (frm)
+            {
+                frm.ShowDialog();
+            }
+            _RefreshMaterialList();
+        }
+
+        private int? GetSelectedMaterialId()
+        {
+            if (dgvMaterials.CurrentRow != null && dgvMaterials.CurrentRow.Cells[0].Value != null)
+            {
+                return Convert.ToInt32(dgvMaterials.CurrentRow.Cells[0].Value);
+            }
+            return null;
         }
 
         private void dgvMaterials_DoubleClick(object sender, EventArgs e)
         {
-
-            frmMaterialInfoCard frm = new frmMaterialInfoCard(int.Parse(dgvMaterials.CurrentRow.Cells[0].Value.ToString()));
-            frm.ShowDialog();
-
-            frmMaterials_Load(null, null);
+            int? materialId = GetSelectedMaterialId();
+            if (materialId.HasValue) ShowMaterialInfo(materialId.Value);
         }
 
-       
-        private void _RefreshMaterialCategoryComboBox()
-        {
-            _FillMaterialCategoriesComboBox();
-        }
-        private void btnAddNew_Click(object sender, EventArgs e)
-        {
-            frmAddUpdateMaterial frm=new frmAddUpdateMaterial();
-            frm.ShowDialog();
+        private void btnClose_Click(object sender, EventArgs e) => this.Close();
 
-            frmMaterials_Load(null, null);
-        }
+        private void btnAddNew_Click(object sender, EventArgs e) => OpenAddUpdateForm();
 
         private void findMaterialToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            frmFindMaterial frm=new frmFindMaterial();
-            frm.ShowDialog();
-
-            frmMaterials_Load(null, null);
+            using (frmFindMaterial frm = new frmFindMaterial())
+            {
+                frm.ShowDialog();
+            }
+            _RefreshMaterialList();
         }
 
         private void showMaterialDetailsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            frmMaterialInfoCard frm = new frmMaterialInfoCard(int.Parse(dgvMaterials.CurrentRow.Cells[0].Value.ToString()));
-            frm.ShowDialog();
-
-            frmMaterials_Load(null, null);
+            int? materialId = GetSelectedMaterialId();
+            if (materialId.HasValue) ShowMaterialInfo(materialId.Value);
         }
 
-        private void addNewMaterialToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            frmAddUpdateMaterial frm = new frmAddUpdateMaterial();
-            frm.ShowDialog();
-
-            frmMaterials_Load(null, null);
-        }
+        private void addNewMaterialToolStripMenuItem_Click(object sender, EventArgs e) => OpenAddUpdateForm();
 
         private void updateMaterialToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            frmAddUpdateMaterial frm = new frmAddUpdateMaterial(int.Parse(dgvMaterials.CurrentRow.Cells[0].Value.ToString()));
-            frm.ShowDialog();
-
-            frmMaterials_Load(null, null);
+            int? materialId = GetSelectedMaterialId();
+            if (materialId.HasValue) OpenAddUpdateForm(materialId.Value);
         }
 
         private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            DialogResult WarningDeletionMessageResult=MessageBox.Show("Are you sure you want to delete this Material!", "Confim Deletion", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
-            if (WarningDeletionMessageResult == DialogResult.OK)
-            {
-                int MaterialID = (int)dgvMaterials.CurrentRow.Cells[0].Value;
-                if (clsMaterial.DeleteMaterial(MaterialID))
-                {
-                    MessageBox.Show("Material has been deleted successfully", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    frmMaterials_Load(null, null);
-                }else
-                {
-                    MessageBox.Show("Material is not delted due to data connected to it.", "Faild", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            int? materialId = GetSelectedMaterialId();
+            if (!materialId.HasValue) return;
 
+            var confirmResult = MessageBox.Show("Are you sure you want to delete this Material?", 
+                "Confirm Deletion", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
+             if (confirmResult == DialogResult.OK)
+            {
+                if (clsMaterial.DeleteMaterial(materialId.Value))
+                {
+                    MessageBox.Show("Material has been deleted successfully.", "Deleted", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    _RefreshMaterialList();
+                }
+                else
+                {
+                    MessageBox.Show("Material is not deleted due to data connected to it.", "Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
-        private void showMaterialTDSsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void showMaterialTDSsToolStripMenuItem_Click(object sender, EventArgs e) => ShowNotImplementedMessage();
+        private void showMaterialCOAsToolStripMenuItem_Click(object sender, EventArgs e) => ShowNotImplementedMessage();
+
+        private void ShowNotImplementedMessage()
         {
-            MessageBox.Show("This feature will be implmented soon.", "Spot Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-        }
-
-        private void showMaterialCOAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show("This feature will be implmented soon.", "Spot Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
+            MessageBox.Show("This feature will be implemented soon.", "Spot Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void txtFilterValue_KeyPress(object sender, KeyPressEventArgs e)
         {
-            
-
-            //we allow number incase Material id is selected.
-            if (cbFilterBy.Text == "Material ID" )
+            if (cbFilterBy.Text == "Material ID")
+            {
                 e.Handled = !char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar);
-        
+            }
         }
     }
 }

@@ -1,84 +1,104 @@
 ﻿using ClassLibBusiness;
 using PolyMatrics.Global;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PolyMatrics.Machines.MaterialCategories
 {
     public partial class ctrlMaterialCategoryCardInfo : UserControl
     {
-        private int? _MaterialCategoryID {  get; set; }
-        public int? SelectedMaterialCategoryID { get { return _MaterialCategoryID; } }
+        private int? _materialCategoryID;
+        public int? SelectedMaterialCategoryID => _materialCategoryID;
 
-        private clsMaterialCategory _MaterialCategoryInfo {  get; set; }
+        private clsMaterialCategory _materialCategoryInfo;
+        public clsMaterialCategory SelectedMaterialCategory => _materialCategoryInfo;
 
-        public clsMaterialCategory SelectedMaterialCategory {  get { return _MaterialCategoryInfo; } }
         public ctrlMaterialCategoryCardInfo()
         {
             InitializeComponent();
         }
 
-        public void LoadInfo(string MaterialCategoryName)
-        {
-            _ResetValues();
-            if (clsValidation.IsValidMaterialCategoryName(MaterialCategoryName))
-                _MaterialCategoryInfo = clsMaterialCategory.Find(MaterialCategoryName);
-
-            if (_MaterialCategoryInfo == null)
-            {
-                lnkEditMaterialCategory.Enabled = false;
-                MessageBox.Show("Soething went wrong, Please retry later.", "Unknown Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            FillMaterialCategoryInfo();
-        }
-        public void LoadInfo(int MaterialID)
+        public void LoadInfo(string materialCategoryName)
         {
             _ResetValues();
 
-            if (!clsValidation.IsValidMaterialCategoryID(MaterialID)) return;
-            
-            _MaterialCategoryInfo = clsMaterialCategory.Find(MaterialID);
-            if (_MaterialCategoryInfo== null)
+            if (string.IsNullOrWhiteSpace(materialCategoryName))
             {
-                lnkEditMaterialCategory.Enabled= false;
-                MessageBox.Show("Soething went wrong, Please retry later.", "Unknown Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ShowError("Invalid Material Category Name.", "Error");
                 return;
             }
+
+            _materialCategoryInfo = clsMaterialCategory.Find(materialCategoryName);
+
+            if (_materialCategoryInfo == null)
+            {
+                ShowError("Something went wrong, please try again later.", "Unknown Error");
+                return;
+            }
+
             FillMaterialCategoryInfo();
         }
+
+        public void LoadInfo(int materialCategoryID)
+        {
+            _ResetValues();
+
+            if (!clsValidation.IsValidMaterialCategoryID(materialCategoryID))
+            {
+                ShowError("Invalid Material Category ID.", "Error");
+                return;
+            }
+
+            _materialCategoryInfo = clsMaterialCategory.Find(materialCategoryID);
+
+            if (_materialCategoryInfo == null)
+            {
+                ShowError("Something went wrong, please try again later.", "Unknown Error");
+                return;
+            }
+
+            FillMaterialCategoryInfo();
+        }
+
+        private void ShowError(string message, string title)
+        {
+            lnkEditMaterialCategory.Visible = false;
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         private void FillMaterialCategoryInfo()
         {
-            _MaterialCategoryID = _MaterialCategoryInfo.MaterialCategoryID;
-            lblMaterialCategoryID.Text = _MaterialCategoryID.ToString();
-            lblMaterialCategoryName.Text = _MaterialCategoryInfo.MaterialCategoryName;
-            lblMaterialCategoryDescryption.Text = _MaterialCategoryInfo.MaterialCategoryDescryption;
-            
+            if (_materialCategoryInfo == null) return;
+
+            _materialCategoryID = _materialCategoryInfo.MaterialCategoryID;
+            lblMaterialCategoryID.Text = _materialCategoryID?.ToString() ?? "[???]";
+            lblMaterialCategoryName.Text = _materialCategoryInfo.MaterialCategoryName;
+            lblMaterialCategoryDescryption.Text = _materialCategoryInfo.MaterialCategoryDescryption; // Keep original control name matching designer
+
+            // If you implement edit feature later, enable/show it here
+            lnkEditMaterialCategory.Visible = false; // Keep hidden until implemented
         }
+
         public void ResetMaterialCategoryInfo()
         {
             _ResetValues();
         }
+
         private void _ResetValues()
         {
-            _MaterialCategoryID = null;
-            _MaterialCategoryInfo= null;
+            _materialCategoryID = null;
+            _materialCategoryInfo = null;
 
             lblMaterialCategoryID.Text = "[???]";
             lblMaterialCategoryName.Text = "Material Category Name...";
-            lblMaterialCategoryDescryption.Text = "Material Category Descryption...";
+            lblMaterialCategoryDescryption.Text = "Material Category Description...";
+
+            lnkEditMaterialCategory.Visible = false; // Hide unsupported features for better UX
         }
 
         private void lnkEditMaterialCategory_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            MessageBox.Show("This feature will be implmented soon.", "Spot Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("This feature will be implemented soon.", "Spot Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
