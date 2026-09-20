@@ -37,6 +37,7 @@ To link the desktop application with your SQL Server database:
 
 ---
 
+<<<<<<< Updated upstream
 # PolyMetrics - Polyurethane Foam Management System
 
 ![Version](https://img.shields.io/badge/Version-Beta%20v1.0-blue?style=for-the-badge)
@@ -73,3 +74,6 @@ To link the desktop application with your SQL Server database:
 * Manager Screens: Organized grid views to display all operational records.
 * Unified Edit Forms: Seamlessly view, update, and edit records within the same interface.
 * Advanced Search & Filters: Easily find specific records using built-in filters.
+=======
+🚧 Project Status: In Active Development (Beta v1.0). This project is part of my portfolio to demonstrate WinForms architecture, database integration, and software design patterns.
+>>>>>>> Stashed changes
